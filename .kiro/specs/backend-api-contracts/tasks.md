@@ -48,7 +48,7 @@ Implement the backend API contracts for the FixIt on-demand technician marketpla
     - _Requirements: 1.1, 18.1_
 
 - [ ] 3. Implement Auth Service API client
-  - [-] 3.1 Implement authentication API functions
+  - [x] 3.1 Implement authentication API functions
     - Create `src/api/services/auth.service.ts` with `login(credentials: LoginRequest): Promise<LoginResponse>` function
     - Implement `getSession(): Promise<SessionResponse>` function for GET /api/auth/me
     - Validate responses against Zod schemas before returning
@@ -62,7 +62,7 @@ Implement the backend API contracts for the FixIt on-demand technician marketpla
     - **Validates: Requirements 1.1, 1.3, 1.4, 1.5**
 
 - [ ] 4. Implement Map Service API client
-  - [-] 4.1 Implement map data API functions
+  - [x] 4.1 Implement map data API functions
     - Create `src/api/services/map.service.ts` with `getRequestMarkers(params: MapQueryParams): Promise<RequestMarker[]>` function
     - Implement `getTechnicianMarkers(params: MapQueryParams): Promise<TechnicianMarker[]>` function
     - Implement `getHeatmapZones(params: MapQueryParams): Promise<HeatmapZone[]>` function
@@ -78,7 +78,7 @@ Implement the backend API contracts for the FixIt on-demand technician marketpla
     - **Validates: Requirements 3.1, 3.2, 3.3, 4.1, 4.2, 5.1**
 
 - [ ] 5. Implement Request Service API client
-  - [-] 5.1 Implement service request and job API functions
+  - [x] 5.1 Implement service request and job API functions
     - Create `src/api/services/requests.service.ts` with `createRequest(body: CreateRequestBody): Promise<CreateRequestResponse>` function
     - Implement `getMyRequests(status?: "active" | "completed" | "cancelled"): Promise<ClientRequest[]>` function
     - Create `src/api/services/jobs.service.ts` with `getAvailableJobs(params: { lat: number; lng: number; category?: string }): Promise<AvailableJob[]>` function
@@ -99,7 +99,7 @@ Implement the backend API contracts for the FixIt on-demand technician marketpla
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 7. Implement Admin Service API client
-  - [-] 7.1 Implement admin transactions and verifications API functions
+  - [x] 7.1 Implement admin transactions and verifications API functions
     - Create `src/api/services/admin.service.ts` with `getTransactions(params?: { page?: number; per_page?: number; status?: string; date_from?: string; date_to?: string }): Promise<TransactionsResponse>` function
     - Implement `getTransactionSummary(): Promise<TransactionSummary>` function
     - Implement `getVerifications(status?: "pending" | "approved" | "rejected"): Promise<Verification[]>` function
@@ -118,12 +118,12 @@ Implement the backend API contracts for the FixIt on-demand technician marketpla
     - **Validates: Requirements 9.1, 9.2, 11.1, 11.2, 16.1, 16.2**
 
 - [ ] 8. Implement Technician and AI Service API clients
-  - [-] 8.1 Implement technician availability API function
+  - [x] 8.1 Implement technician availability API function
     - Create `src/api/services/technician.service.ts` with `updateAvailability(body: AvailabilityRequest): Promise<AvailabilityResponse>` function
     - Validate request body and response against Zod schemas
     - _Requirements: 15.1, 15.2, 15.3_
 
-  - [-] 8.2 Implement AI diagnosis API function
+  - [x] 8.2 Implement AI diagnosis API function
     - Create `src/api/services/ai.service.ts` with `diagnoseImage(file: File): Promise<DiagnosisResponse>` function
     - Implement multipart/form-data upload handling
     - Validate file size (max 5MB) and format (PNG/JPG) before sending
@@ -161,7 +161,7 @@ Implement the backend API contracts for the FixIt on-demand technician marketpla
     - **Validates: Requirements 12.1, 14.1, 18.1, 18.2**
 
 - [ ] 10. Implement role-based access control utilities
-  - [-] 10.1 Create RBAC middleware and route guards
+  - [x] 10.1 Create RBAC middleware and route guards
     - Create `src/api/guards/role-guard.ts` with role validation utility that checks JWT role claim against endpoint requirements
     - Define role-to-endpoint mapping: Client endpoints, Technician endpoints, Admin endpoints
     - Implement `requireRole(allowedRoles: string[])` guard function for use in API client layer
