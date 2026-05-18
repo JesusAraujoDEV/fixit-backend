@@ -13,12 +13,12 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": ["ES2022"],
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "db/**/*.ts"],
+  "include": ["src/**/*.ts", "db/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

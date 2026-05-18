@@ -4,8 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
-    "build": "tsc --noEmit",
+    "build": "tsc",
     "test": "vitest --run",
     "test:watch": "vitest",
     "db:migrate": "npx sequelize-cli db:migrate",
@@ -16,7 +18,13 @@
     "db:status": "npx sequelize-cli db:migrate:status"
   },
   "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^25.9.0",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.7",
     "fast-check": "^4.8.0",
     "sequelize-cli": "^6.6.2",
     "tsx": "^4.19.0",
@@ -24,10 +32,17 @@
     "vitest": "^4.1.6"
   },
   "dependencies": {
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
     "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "jsonwebtoken": "^9.0.2",
     "pg": "^8.13.0",
     "pg-hstore": "^2.3.4",
     "sequelize": "^6.37.3",
+    "socket.io": "^4.8.0",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
     "zod": "^4.4.3"
   }
 }
