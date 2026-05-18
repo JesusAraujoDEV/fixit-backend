@@ -7,14 +7,27 @@
     "typecheck": "tsc --noEmit",
     "build": "tsc --noEmit",
     "test": "vitest --run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "db:migrate": "npx sequelize-cli db:migrate",
+    "db:rollback": "npx sequelize-cli db:migrate:undo",
+    "db:rollback:all": "npx sequelize-cli db:migrate:undo:all",
+    "db:seed": "npx sequelize-cli db:seed:all",
+    "db:seed:undo": "npx sequelize-cli db:seed:undo:all",
+    "db:status": "npx sequelize-cli db:migrate:status"
   },
   "devDependencies": {
     "@types/node": "^25.9.0",
+    "fast-check": "^4.8.0",
+    "sequelize-cli": "^6.6.2",
+    "tsx": "^4.19.0",
     "typescript": "5.7.3",
     "vitest": "^4.1.6"
   },
   "dependencies": {
+    "dotenv": "^16.4.5",
+    "pg": "^8.13.0",
+    "pg-hstore": "^2.3.4",
+    "sequelize": "^6.37.3",
     "zod": "^4.4.3"
   }
 }

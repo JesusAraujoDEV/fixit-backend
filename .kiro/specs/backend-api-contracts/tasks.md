@@ -55,7 +55,7 @@ Implement the backend API contracts for the FixIt on-demand technician marketpla
     - Handle 401 errors with appropriate error codes
     - _Requirements: 1.1, 1.2, 1.5_
 
-  - [~] 3.2 Write property tests for auth service contracts
+  - [-] 3.2 Write property tests for auth service contracts
     - **Property 1: Login response round-trip consistency** — For any authenticated user, the user object from login SHALL be identical to the user object from GET /api/auth/me
     - **Property 2: JWT payload completeness** — For any issued JWT, decoding SHALL produce sub, role, iat, and exp with exp > iat
     - **Property 3: Invalid token rejection** — For any malformed/expired JWT, the API SHALL return 401 with appropriate error code
@@ -70,7 +70,7 @@ Implement the backend API contracts for the FixIt on-demand technician marketpla
     - Validate responses against Zod schemas
     - _Requirements: 3.1, 3.2, 3.3, 4.1, 4.2, 4.3, 5.1, 5.2_
 
-  - [~] 4.2 Write property tests for map service contracts
+  - [-] 4.2 Write property tests for map service contracts
     - **Property 6: Geospatial radius filtering for request markers** — Every returned marker position SHALL be within radius_km of the query point and contain required fields
     - **Property 7: Invalid map query parameter rejection** — Missing or non-numeric lat/lng/radius_km SHALL return HTTP 400
     - **Property 8: Geospatial and status filtering for technician markers** — Non-Admin results SHALL only include available/en_route technicians within radius
@@ -87,7 +87,7 @@ Implement the backend API contracts for the FixIt on-demand technician marketpla
     - Validate responses against Zod schemas
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 7.1, 7.2, 7.3, 7.4, 8.1, 8.2, 8.3_
 
-  - [~] 5.2 Write property tests for request and job contracts
+  - [-] 5.2 Write property tests for request and job contracts
     - **Property 10: Service request creation with valid input** — Valid CreateRequestBody SHALL return 201 with id, status="pending", created_at, nearby_technicians_count, estimated_response_min
     - **Property 11: Service request validation error structure** — Invalid body SHALL return 422 with non-empty errors array containing field and message
     - **Property 12: Job feed sorting and distance invariants** — All jobs SHALL have distance_km ≤ 10, urgent first, then ascending distance
@@ -110,7 +110,7 @@ Implement the backend API contracts for the FixIt on-demand technician marketpla
     - Validate responses against Zod schemas
     - _Requirements: 9.1, 9.2, 9.3, 10.1, 10.2, 10.3, 10.4, 11.1, 11.2, 16.1, 16.2, 16.3_
 
-  - [~] 7.2 Write property tests for admin service contracts
+  - [-] 7.2 Write property tests for admin service contracts
     - **Property 15: Admin transactions pagination invariant** — Response SHALL contain data (length ≤ per_page), total, page, per_page, and valid transaction objects
     - **Property 16: Admin event log ordering and schema** — Events SHALL be sorted by time descending with valid type and structure
     - **Property 22: KPI response structure with deltas** — Response SHALL contain active_services, technicians_online, revenue_today, reports_pending each with value and delta
@@ -130,7 +130,7 @@ Implement the backend API contracts for the FixIt on-demand technician marketpla
     - Validate response against Zod schema
     - _Requirements: 17.1, 17.2, 17.3_
 
-  - [~] 8.3 Write property tests for technician and AI contracts
+  - [-] 8.3 Write property tests for technician and AI contracts
     - **Property 21: Availability toggle response schema** — Valid request SHALL return 200 with online (matching request) and updated_at (ISO-8601)
     - **Property 24: AI diagnosis response schema and bounds** — Valid image SHALL return diagnosis, confidence in [0.0, 1.0], valid suggested_category, and tags array
     - **Property 25: Invalid file upload rejection** — File > 5MB or non-PNG/JPG SHALL return 422 with error code "invalid_file"
@@ -168,7 +168,7 @@ Implement the backend API contracts for the FixIt on-demand technician marketpla
     - Handle 403 Forbidden responses with appropriate error mapping
     - _Requirements: 2.1, 2.2, 2.3, 2.4_
 
-  - [~] 10.2 Write property tests for RBAC enforcement
+  - [-] 10.2 Write property tests for RBAC enforcement
     - **Property 4: Role-based access enforcement** — User with role R accessing endpoint restricted to role S (R ≠ S) SHALL receive 403
     - **Property 5: Unauthenticated request rejection** — Request without Authorization header on protected endpoint SHALL receive 401
     - **Validates: Requirements 2.1, 2.2, 2.3, 2.4**
