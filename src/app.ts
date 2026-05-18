@@ -10,6 +10,7 @@ import jobsRoutes from "./routes/jobs.routes.js";
 import technicianRoutes from "./routes/technician.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import aiRoutes from "./routes/ai.routes.js";
+import uploadRoutes from "./routes/upload.routes.js";
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.use("/api/jobs", jobsRoutes);
 app.use("/api/technician", technicianRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/upload", uploadRoutes);
 
 // Health check
 app.get("/health", (_req, res) => {
