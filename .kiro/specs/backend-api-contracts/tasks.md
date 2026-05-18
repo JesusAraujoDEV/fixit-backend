@@ -34,7 +34,7 @@ Implement the backend API contracts for the FixIt on-demand technician marketpla
     - _Requirements: 1.1, 1.2, 3.3, 6.2, 6.3, 7.1, 9.1, 10.4, 11.1, 14.1, 15.1, 16.2, 17.1, 17.3_
 
 - [ ] 2. Implement error handling and API client infrastructure
-  - [~] 2.1 Create error handling utilities and HTTP client wrapper
+  - [-] 2.1 Create error handling utilities and HTTP client wrapper
     - Create `src/api/client/http-client.ts` with a typed fetch wrapper that handles JWT Bearer token injection, response parsing, and error mapping
     - Implement error classification: map HTTP 400 to `invalid_params`, 401 to `unauthorized`/`token_expired`/`token_invalid`, 403 to `forbidden`, 404 to `not_found`, 422 to validation errors or `invalid_file`
     - Create `src/api/client/errors.ts` with custom error classes: ApiError, AuthenticationError, AuthorizationError, ValidationError, NotFoundError
