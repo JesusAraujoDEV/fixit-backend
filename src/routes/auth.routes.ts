@@ -1,8 +1,52 @@
 import { Router } from "express";
-import { login, getMe } from "../controllers/auth.controller.js";
+import { login, register, getMe } from "../controllers/auth.controller.js";
 import { authenticate } from "../middleware/auth.middleware.js";
 
 const router = Router();
+
+/**
+ * @openapi
+ * /api/auth/register:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Registrar nuevo usuario
+ *     description: Crea una cuenta nueva (client o technician) y retorna JWT + user.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password, full_name, role]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *                 minLength: 6
+ *               full_name:
+ *                 type: string
+ *               phone:
+ *                 type: string
+ *               role:
+ *                 type: string
+ *                 enum: [client, technician]
+ *     responses:
+ *       201:
+ *         description: Registro exitoso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LoginResponse'
+ *       400:
+ *         description: Campos requeridos faltantes
+ *       409:
+ *         description: Email ya registrado
+ *       422:
+ *         description: Error de validación
+ */
+router.post("/register", register);
 
 /**
  * @openapi
