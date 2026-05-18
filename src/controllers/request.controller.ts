@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { ServiceRequest, TechnicianProfile, sequelize } from "../models/index.js";
+import { ServiceRequest, sequelize } from "../models/index.js";
 import { SERVICE_CATEGORIES, type ServiceCategory } from "../models/service-request.model.js";
 import { QueryTypes } from "sequelize";
 
@@ -64,31 +64,30 @@ export async function createRequest(req: Request, res: Response): Promise<void> 
       return;
     }
 
-    // Create the service request with PostGIS point
+    // Create the service request
     const serviceRequest = await ServiceRequest.create({
       client_id: userId,
       title,
       description: description || "",
       category: category as ServiceCategory,
       images: images || [],
-      location: {
-        type: "Point",
-        coordinates: [lng, lat], // GeoJSON format: [longitude, latitude]
-      },
+      latitude: lat,
+      longitude: lng,
     });
 
-    // Count nearby online technicians (within 10km)
+    // Count nearby online technicians (within 10km) using Haversine
     const [countResult] = await sequelize.query<{ count: string }>(
       `
       SELECT COUNT(*) as count
       FROM fixit.technician_profiles
       WHERE is_online = TRUE
-        AND current_location IS NOT NULL
-        AND ST_DWithin(
-          current_location::geography,
-          ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography,
-          10000
-        )
+        AND current_latitude IS NOT NULL
+        AND current_longitude IS NOT NULL
+        AND (6371 * acos(
+          cos(radians(:lat)) * cos(radians(current_latitude)) *
+          cos(radians(current_longitude) - radians(:lng)) +
+          sin(radians(:lat)) * sin(radians(current_latitude))
+        )) <= 10
       `,
       {
         replacements: { lat, lng },

@@ -8,7 +8,6 @@ import {
   NonAttribute,
 } from "sequelize";
 import type { User } from "./user.model";
-import type { Transaction } from "./transaction.model";
 
 export const SERVICE_CATEGORIES = [
   "plumbing",
@@ -46,14 +45,16 @@ export class ServiceRequest extends Model<
   declare images: CreationOptional<string[]>;
   declare status: CreationOptional<RequestStatus>;
   declare price_estimated: CreationOptional<number | null>;
-  declare location: object;
+  // TODO: Migrar a GEOMETRY(Point, 4326) cuando PostGIS esté disponible
+  declare latitude: number;
+  declare longitude: number;
   declare created_at: CreationOptional<Date>;
   declare updated_at: CreationOptional<Date>;
 
   // Associations
   declare client?: NonAttribute<User>;
   declare technician?: NonAttribute<User>;
-  declare transactions?: NonAttribute<Transaction[]>;
+  declare transactions?: NonAttribute<Model[]>;
 }
 
 export function initServiceRequest(sequelize: Sequelize): void {
@@ -119,9 +120,21 @@ export function initServiceRequest(sequelize: Sequelize): void {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: true,
       },
-      location: {
-        type: DataTypes.GEOMETRY("POINT", 4326),
+      latitude: {
+        type: DataTypes.DOUBLE,
         allowNull: false,
+        validate: {
+          min: -90,
+          max: 90,
+        },
+      },
+      longitude: {
+        type: DataTypes.DOUBLE,
+        allowNull: false,
+        validate: {
+          min: -180,
+          max: 180,
+        },
       },
       created_at: {
         type: DataTypes.DATE,

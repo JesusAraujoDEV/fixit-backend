@@ -19,7 +19,9 @@ export class TechnicianProfile extends Model<
   declare is_verified: CreationOptional<boolean>;
   declare is_online: CreationOptional<boolean>;
   declare rating_average: CreationOptional<number>;
-  declare current_location: CreationOptional<object | null>;
+  // TODO: Migrar a GEOMETRY(Point, 4326) cuando PostGIS esté disponible
+  declare current_latitude: CreationOptional<number | null>;
+  declare current_longitude: CreationOptional<number | null>;
   declare created_at: CreationOptional<Date>;
   declare updated_at: CreationOptional<Date>;
 
@@ -68,9 +70,21 @@ export function initTechnicianProfile(sequelize: Sequelize): void {
           max: 5,
         },
       },
-      current_location: {
-        type: DataTypes.GEOMETRY("POINT", 4326),
+      current_latitude: {
+        type: DataTypes.DOUBLE,
         allowNull: true,
+        validate: {
+          min: -90,
+          max: 90,
+        },
+      },
+      current_longitude: {
+        type: DataTypes.DOUBLE,
+        allowNull: true,
+        validate: {
+          min: -180,
+          max: 180,
+        },
       },
       created_at: {
         type: DataTypes.DATE,

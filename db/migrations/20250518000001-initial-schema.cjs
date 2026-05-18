@@ -12,13 +12,13 @@ module.exports = {
         { transaction }
       );
 
-      // 1. Enable PostGIS extension
-      await queryInterface.sequelize.query(
-        'CREATE EXTENSION IF NOT EXISTS postgis;',
-        { transaction }
-      );
+      // TODO: Cuando PostGIS esté disponible en el servidor, descomentar:
+      // await queryInterface.sequelize.query(
+      //   'CREATE EXTENSION IF NOT EXISTS postgis;',
+      //   { transaction }
+      // );
 
-      // 2. Create ENUM types in fixit schema
+      // 1. Create ENUM types in fixit schema
       await queryInterface.sequelize.query(
         `CREATE TYPE fixit.enum_user_role AS ENUM ('client', 'technician', 'admin');`,
         { transaction }
@@ -44,7 +44,7 @@ module.exports = {
         { transaction }
       );
 
-      // 3. Create users table
+      // 2. Create users table
       await queryInterface.createTable(
         { tableName: 'users', schema: 'fixit' },
         {
@@ -104,7 +104,8 @@ module.exports = {
         { name: 'idx_users_role', transaction }
       );
 
-      // 4. Create technician_profiles table
+      // 3. Create technician_profiles table
+      // Ubicación almacenada como lat/lng separados (sin PostGIS)
       await queryInterface.createTable(
         { tableName: 'technician_profiles', schema: 'fixit' },
         {
@@ -143,8 +144,13 @@ module.exports = {
             allowNull: false,
             defaultValue: 0.0,
           },
-          current_location: {
-            type: 'GEOMETRY(Point, 4326)',
+          // TODO: Migrar a GEOMETRY(Point, 4326) + índice GIST cuando PostGIS esté disponible
+          current_latitude: {
+            type: Sequelize.DOUBLE,
+            allowNull: true,
+          },
+          current_longitude: {
+            type: Sequelize.DOUBLE,
             allowNull: true,
           },
           created_at: {
@@ -168,18 +174,18 @@ module.exports = {
         { name: 'idx_technician_profiles_user_id', unique: true, transaction }
       );
 
-      // Spatial GIST index for proximity queries
-      await queryInterface.sequelize.query(
-        `CREATE INDEX idx_technician_profiles_location
-         ON fixit.technician_profiles USING GIST (current_location);`,
-        { transaction }
-      );
-
       // Partial index for online technicians
       await queryInterface.sequelize.query(
         `CREATE INDEX idx_technician_profiles_online
          ON fixit.technician_profiles (is_online) WHERE is_online = TRUE;`,
         { transaction }
+      );
+
+      // Composite index for spatial-like queries (lat/lng filtering)
+      await queryInterface.addIndex(
+        { tableName: 'technician_profiles', schema: 'fixit' },
+        ['current_latitude', 'current_longitude'],
+        { name: 'idx_technician_profiles_lat_lng', transaction }
       );
 
       // Rating average check constraint
@@ -189,7 +195,7 @@ module.exports = {
         { transaction }
       );
 
-      // 5. Create service_requests table
+      // 4. Create service_requests table
       await queryInterface.createTable(
         { tableName: 'service_requests', schema: 'fixit' },
         {
@@ -244,8 +250,13 @@ module.exports = {
             type: Sequelize.DECIMAL(10, 2),
             allowNull: true,
           },
-          location: {
-            type: 'GEOMETRY(Point, 4326)',
+          // TODO: Migrar a GEOMETRY(Point, 4326) + índice GIST cuando PostGIS esté disponible
+          latitude: {
+            type: Sequelize.DOUBLE,
+            allowNull: false,
+          },
+          longitude: {
+            type: Sequelize.DOUBLE,
             allowNull: false,
           },
           created_at: {
@@ -283,12 +294,10 @@ module.exports = {
         ['category'],
         { name: 'idx_service_requests_category', transaction }
       );
-
-      // Spatial GIST index for service request locations
-      await queryInterface.sequelize.query(
-        `CREATE INDEX idx_service_requests_location
-         ON fixit.service_requests USING GIST (location);`,
-        { transaction }
+      await queryInterface.addIndex(
+        { tableName: 'service_requests', schema: 'fixit' },
+        ['latitude', 'longitude'],
+        { name: 'idx_service_requests_lat_lng', transaction }
       );
 
       // Created_at descending index for feed ordering
@@ -314,7 +323,7 @@ module.exports = {
         { transaction }
       );
 
-      // 6. Create transactions table
+      // 5. Create transactions table
       await queryInterface.createTable(
         { tableName: 'transactions', schema: 'fixit' },
         {

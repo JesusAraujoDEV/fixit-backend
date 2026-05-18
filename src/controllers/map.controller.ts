@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { sequelize, TechnicianProfile, User } from "../models/index.js";
+import { sequelize } from "../models/index.js";
 import { QueryTypes } from "sequelize";
 
 interface TechnicianRow {
@@ -15,8 +15,10 @@ interface TechnicianRow {
 
 /**
  * GET /api/map/technicians
- * Returns online technicians within a given radius using PostGIS spatial query.
+ * Returns online technicians within a given radius using Haversine formula.
  * Query params: lat, lng, radius_km
+ *
+ * TODO: Migrar a ST_DWithin cuando PostGIS esté disponible para mayor precisión.
  */
 export async function getTechnicians(req: Request, res: Response): Promise<void> {
   try {
@@ -59,8 +61,8 @@ export async function getTechnicians(req: Request, res: Response): Promise<void>
       return;
     }
 
-    // PostGIS spatial query: find online technicians within radius
-    // ST_DWithin with geography cast for accurate distance in meters
+    // Haversine formula in SQL for distance calculation (in km)
+    // Earth radius ≈ 6371 km
     const technicians = await sequelize.query<TechnicianRow>(
       `
       SELECT
@@ -69,31 +71,33 @@ export async function getTechnicians(req: Request, res: Response): Promise<void>
         u.full_name,
         tp.rating_average,
         tp.is_verified,
-        ST_Y(tp.current_location::geometry) AS latitude,
-        ST_X(tp.current_location::geometry) AS longitude,
+        tp.current_latitude AS latitude,
+        tp.current_longitude AS longitude,
         ROUND(
-          (ST_Distance(
-            tp.current_location::geography,
-            ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography
-          ) / 1000.0)::numeric,
+          (6371 * acos(
+            cos(radians(:lat)) * cos(radians(tp.current_latitude)) *
+            cos(radians(tp.current_longitude) - radians(:lng)) +
+            sin(radians(:lat)) * sin(radians(tp.current_latitude))
+          ))::numeric,
           2
         ) AS distance_km
       FROM fixit.technician_profiles tp
       INNER JOIN fixit.users u ON u.id = tp.user_id
       WHERE tp.is_online = TRUE
-        AND tp.current_location IS NOT NULL
-        AND ST_DWithin(
-          tp.current_location::geography,
-          ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography,
-          :radius_meters
-        )
+        AND tp.current_latitude IS NOT NULL
+        AND tp.current_longitude IS NOT NULL
+        AND (6371 * acos(
+          cos(radians(:lat)) * cos(radians(tp.current_latitude)) *
+          cos(radians(tp.current_longitude) - radians(:lng)) +
+          sin(radians(:lat)) * sin(radians(tp.current_latitude))
+        )) <= :radius_km
       ORDER BY distance_km ASC
       `,
       {
         replacements: {
           lat: latitude,
           lng: longitude,
-          radius_meters: radius * 1000, // Convert km to meters for ST_DWithin
+          radius_km: radius,
         },
         type: QueryTypes.SELECT,
       }
