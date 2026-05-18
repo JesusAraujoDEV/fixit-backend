@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createRequest } from "../controllers/request.controller.js";
+import { createRequest, getMyRequests } from "../controllers/request.controller.js";
 import { authenticate, requireRole } from "../middleware/auth.middleware.js";
 
 const router = Router();
@@ -10,9 +10,7 @@ const router = Router();
  *   post:
  *     tags: [Requests]
  *     summary: Crear solicitud de servicio
- *     description: >
- *       Permite a un cliente crear un ticket de servicio con título, descripción,
- *       categoría, imágenes y ubicación geográfica.
+ *     description: Permite a un cliente crear un ticket con título, categoría, imágenes y ubicación.
  *     security:
  *       - BearerAuth: []
  *     requestBody:
@@ -23,83 +21,46 @@ const router = Router();
  *             type: object
  *             required: [title, category, latitude, longitude]
  *             properties:
- *               title:
- *                 type: string
- *                 minLength: 5
- *                 maxLength: 200
- *                 example: "Fuga de agua en cocina"
- *               description:
- *                 type: string
- *                 maxLength: 2000
- *                 example: "Hay una fuga debajo del fregadero"
- *               category:
- *                 type: string
- *                 enum: [plumbing, electrical, carpentry, painting, appliance_repair, locksmith, cleaning, hvac, general]
- *               images:
- *                 type: array
- *                 maxItems: 4
- *                 items:
- *                   type: string
- *                   format: uri
- *               latitude:
- *                 type: number
- *                 minimum: -90
- *                 maximum: 90
- *               longitude:
- *                 type: number
- *                 minimum: -180
- *                 maximum: 180
+ *               title: { type: string, minLength: 5, maxLength: 200 }
+ *               description: { type: string }
+ *               category: { type: string, enum: [plumbing, electrical, carpentry, painting, appliance_repair, locksmith, cleaning, hvac, general] }
+ *               images: { type: array, items: { type: string }, maxItems: 4 }
+ *               latitude: { type: number }
+ *               longitude: { type: number }
  *     responses:
  *       201:
- *         description: Solicitud creada exitosamente
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 id:
- *                   type: string
- *                   format: uuid
- *                 status:
- *                   type: string
- *                   example: "pending"
- *                 created_at:
- *                   type: string
- *                   format: date-time
- *                 nearby_technicians_count:
- *                   type: integer
- *                 estimated_response_min:
- *                   type: integer
- *                   nullable: true
+ *         description: Solicitud creada
  *       400:
- *         description: Campos requeridos faltantes
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *         description: Campos faltantes
  *       401:
  *         description: No autenticado
+ *       403:
+ *         description: No es cliente
  *       422:
  *         description: Error de validación
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                 code:
- *                   type: string
- *                 errors:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       field:
- *                         type: string
- *                       message:
- *                         type: string
  */
 router.post("/", authenticate, requireRole("client"), createRequest);
+
+/**
+ * @openapi
+ * /api/requests/mine:
+ *   get:
+ *     tags: [Requests]
+ *     summary: Historial de solicitudes del cliente
+ *     description: Retorna las solicitudes del cliente autenticado, opcionalmente filtradas por estado.
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema: { type: string, enum: [active, completed, cancelled] }
+ *         description: Filtrar por estado
+ *     responses:
+ *       200:
+ *         description: Array de solicitudes
+ *       401:
+ *         description: No autenticado
+ */
+router.get("/mine", authenticate, requireRole("client"), getMyRequests);
 
 export default router;

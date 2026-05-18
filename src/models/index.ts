@@ -1,10 +1,12 @@
 import { Sequelize } from "sequelize";
 import dotenv from "dotenv";
 
-import { initUser, User } from "./user.model";
-import { initTechnicianProfile, TechnicianProfile } from "./technician-profile.model";
-import { initServiceRequest, ServiceRequest } from "./service-request.model";
-import { initTransaction, Transaction } from "./transaction.model";
+import { initUser, User } from "./user.model.js";
+import { initTechnicianProfile, TechnicianProfile } from "./technician-profile.model.js";
+import { initServiceRequest, ServiceRequest } from "./service-request.model.js";
+import { initTransaction, Transaction } from "./transaction.model.js";
+import { initPlatformEvent, PlatformEvent } from "./platform-event.model.js";
+import { initTechnicianVerification, TechnicianVerification } from "./technician-verification.model.js";
 
 dotenv.config();
 
@@ -32,6 +34,8 @@ initUser(sequelize);
 initTechnicianProfile(sequelize);
 initServiceRequest(sequelize);
 initTransaction(sequelize);
+initPlatformEvent(sequelize);
+initTechnicianVerification(sequelize);
 
 // Define associations
 User.hasOne(TechnicianProfile, {
@@ -70,4 +74,21 @@ Transaction.belongsTo(ServiceRequest, {
   as: "serviceRequest",
 });
 
-export { sequelize, User, TechnicianProfile, ServiceRequest, Transaction };
+User.hasMany(TechnicianVerification, {
+  foreignKey: "user_id",
+  as: "verifications",
+});
+TechnicianVerification.belongsTo(User, {
+  foreignKey: "user_id",
+  as: "user",
+});
+
+export {
+  sequelize,
+  User,
+  TechnicianProfile,
+  ServiceRequest,
+  Transaction,
+  PlatformEvent,
+  TechnicianVerification,
+};

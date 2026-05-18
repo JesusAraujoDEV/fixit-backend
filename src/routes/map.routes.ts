@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { getTechnicians } from "../controllers/map.controller.js";
-import { authenticate } from "../middleware/auth.middleware.js";
+import { getTechnicians, getRequestMarkers, getHeatmap } from "../controllers/map.controller.js";
+import { authenticate, requireRole } from "../middleware/auth.middleware.js";
 
 const router = Router();
 
@@ -10,62 +10,94 @@ const router = Router();
  *   get:
  *     tags: [Map]
  *     summary: Obtener técnicos cercanos
- *     description: >
- *       Realiza una consulta espacial PostGIS para retornar técnicos online
- *       dentro del radio especificado. Usa ST_DWithin con geography para
- *       cálculos precisos de distancia en metros.
+ *     description: Consulta espacial Haversine para retornar técnicos online dentro del radio.
  *     security:
  *       - BearerAuth: []
  *     parameters:
  *       - in: query
  *         name: lat
  *         required: true
- *         schema:
- *           type: number
- *           minimum: -90
- *           maximum: 90
- *         description: Latitud del punto central
+ *         schema: { type: number }
  *       - in: query
  *         name: lng
  *         required: true
- *         schema:
- *           type: number
- *           minimum: -180
- *           maximum: 180
- *         description: Longitud del punto central
+ *         schema: { type: number }
  *       - in: query
  *         name: radius_km
  *         required: true
- *         schema:
- *           type: number
- *           minimum: 0.1
- *           maximum: 100
- *         description: Radio de búsqueda en kilómetros
+ *         schema: { type: number }
  *     responses:
  *       200:
- *         description: Lista de técnicos dentro del radio
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 technicians:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/TechnicianMarker'
+ *         description: Lista de técnicos
  *       400:
- *         description: Parámetros inválidos o faltantes
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *         description: Parámetros inválidos
  *       401:
  *         description: No autenticado
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.get("/technicians", authenticate, getTechnicians);
+
+/**
+ * @openapi
+ * /api/map/requests:
+ *   get:
+ *     tags: [Map]
+ *     summary: Obtener markers de solicitudes
+ *     description: Retorna solicitudes pendientes dentro del radio para pintar en el mapa.
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: lat
+ *         required: true
+ *         schema: { type: number }
+ *       - in: query
+ *         name: lng
+ *         required: true
+ *         schema: { type: number }
+ *       - in: query
+ *         name: radius_km
+ *         required: true
+ *         schema: { type: number }
+ *     responses:
+ *       200:
+ *         description: Array de markers de solicitudes
+ *       400:
+ *         description: Parámetros inválidos
+ *       401:
+ *         description: No autenticado
+ */
+router.get("/requests", authenticate, requireRole("client"), getRequestMarkers);
+
+/**
+ * @openapi
+ * /api/map/heatmap:
+ *   get:
+ *     tags: [Map]
+ *     summary: Obtener zonas de demanda (heatmap)
+ *     description: Retorna zonas de calor basadas en densidad de solicitudes.
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: lat
+ *         required: true
+ *         schema: { type: number }
+ *       - in: query
+ *         name: lng
+ *         required: true
+ *         schema: { type: number }
+ *       - in: query
+ *         name: radius_km
+ *         required: true
+ *         schema: { type: number }
+ *     responses:
+ *       200:
+ *         description: Array de zonas de calor
+ *       400:
+ *         description: Parámetros inválidos
+ *       401:
+ *         description: No autenticado
+ */
+router.get("/heatmap", authenticate, requireRole("technician", "admin"), getHeatmap);
 
 export default router;

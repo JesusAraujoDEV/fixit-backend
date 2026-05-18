@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { ServiceRequest, sequelize } from "../models/index.js";
+import { ServiceRequest, User, sequelize } from "../models/index.js";
 import { SERVICE_CATEGORIES, type ServiceCategory } from "../models/service-request.model.js";
 import { QueryTypes } from "sequelize";
 
@@ -12,7 +12,6 @@ export async function createRequest(req: Request, res: Response): Promise<void> 
     const userId = req.user!.id;
     const { title, description, category, images, latitude, longitude } = req.body;
 
-    // Validate required fields
     if (!title || !category || latitude === undefined || longitude === undefined) {
       res.status(400).json({
         error: "title, category, latitude y longitude son requeridos",
@@ -21,7 +20,6 @@ export async function createRequest(req: Request, res: Response): Promise<void> 
       return;
     }
 
-    // Validate title length
     if (title.length < 5 || title.length > 200) {
       res.status(422).json({
         error: "El título debe tener entre 5 y 200 caracteres",
@@ -31,7 +29,6 @@ export async function createRequest(req: Request, res: Response): Promise<void> 
       return;
     }
 
-    // Validate category
     if (!SERVICE_CATEGORIES.includes(category as ServiceCategory)) {
       res.status(422).json({
         error: `Categoría inválida. Opciones: ${SERVICE_CATEGORIES.join(", ")}`,
@@ -41,7 +38,6 @@ export async function createRequest(req: Request, res: Response): Promise<void> 
       return;
     }
 
-    // Validate images array
     if (images && (!Array.isArray(images) || images.length > 4)) {
       res.status(422).json({
         error: "Máximo 4 imágenes permitidas",
@@ -51,7 +47,6 @@ export async function createRequest(req: Request, res: Response): Promise<void> 
       return;
     }
 
-    // Validate coordinates
     const lat = parseFloat(latitude);
     const lng = parseFloat(longitude);
 
@@ -64,7 +59,6 @@ export async function createRequest(req: Request, res: Response): Promise<void> 
       return;
     }
 
-    // Create the service request
     const serviceRequest = await ServiceRequest.create({
       client_id: userId,
       title,
@@ -106,9 +100,73 @@ export async function createRequest(req: Request, res: Response): Promise<void> 
     });
   } catch (error) {
     console.error("CreateRequest error:", error);
-    res.status(500).json({
-      error: "Error interno del servidor",
-      code: "internal_error",
+    res.status(500).json({ error: "Error interno del servidor", code: "internal_error" });
+  }
+}
+
+/**
+ * GET /api/requests/mine
+ * Returns the authenticated client's request history.
+ * Query params: status (optional: "active" | "completed" | "cancelled")
+ */
+export async function getMyRequests(req: Request, res: Response): Promise<void> {
+  try {
+    const userId = req.user!.id;
+    const statusFilter = req.query.status as string | undefined;
+
+    const where: Record<string, unknown> = { client_id: userId };
+
+    if (statusFilter) {
+      // Map frontend status to DB statuses
+      const statusMap: Record<string, string[]> = {
+        active: ["pending", "searching", "matched", "in_progress"],
+        completed: ["completed"],
+        cancelled: ["cancelled"],
+      };
+
+      if (!statusMap[statusFilter]) {
+        res.status(400).json({
+          error: "status debe ser 'active', 'completed' o 'cancelled'",
+          code: "invalid_params",
+        });
+        return;
+      }
+
+      where.status = statusMap[statusFilter];
+    }
+
+    const requests = await ServiceRequest.findAll({
+      where,
+      include: [
+        { model: User, as: "technician", attributes: ["full_name"] },
+      ],
+      order: [["created_at", "DESC"]],
+      limit: 50,
     });
+
+    const response = requests.map((r) => {
+      const isActive = ["pending", "searching", "matched", "in_progress"].includes(r.status);
+      let displayStatus: "active" | "completed" | "cancelled";
+
+      if (r.status === "completed") displayStatus = "completed";
+      else if (r.status === "cancelled") displayStatus = "cancelled";
+      else displayStatus = "active";
+
+      return {
+        id: r.id,
+        title: r.title,
+        category: r.category,
+        status: displayStatus,
+        technician: (r as any).technician ? { name: (r as any).technician.full_name } : null,
+        created_at: r.created_at,
+        price: r.price_estimated ? `$${r.price_estimated}` : null,
+        eta_minutes: isActive ? Math.floor(Math.random() * 15) + 5 : undefined, // TODO: real ETA calculation
+      };
+    });
+
+    res.status(200).json(response);
+  } catch (error) {
+    console.error("GetMyRequests error:", error);
+    res.status(500).json({ error: "Error interno del servidor", code: "internal_error" });
   }
 }
