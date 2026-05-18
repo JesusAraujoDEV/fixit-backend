@@ -6,8 +6,8 @@ Implement the backend API contracts for the FixIt on-demand technician marketpla
 
 ## Tasks
 
-- [ ] 1. Set up project structure and shared types
-  - [-] 1.1 Create API contract type definitions and shared interfaces
+- [x] 1. Set up project structure and shared types
+  - [x] 1.1 Create API contract type definitions and shared interfaces
     - Create `src/api/types/auth.ts` with LoginRequest, LoginResponse, SessionResponse, UserObject, JWTPayload interfaces
     - Create `src/api/types/map.ts` with RequestMarker, TechnicianMarker, HeatmapZone, MapQueryParams interfaces
     - Create `src/api/types/requests.ts` with CreateRequestBody, CreateRequestResponse, ClientRequest interfaces
@@ -20,7 +20,7 @@ Implement the backend API contracts for the FixIt on-demand technician marketpla
     - Create `src/api/types/index.ts` barrel export file
     - _Requirements: 1.1, 1.3, 3.1, 4.1, 5.1, 6.1, 7.1, 8.1, 9.1, 9.2, 10.1, 11.1, 12.1, 13.1, 14.1, 15.1, 16.1, 16.2, 17.1, 18.1_
 
-  - [~] 1.2 Create Zod validation schemas for all API contracts
+  - [x] 1.2 Create Zod validation schemas for all API contracts
     - Create `src/api/schemas/auth.schema.ts` with loginRequestSchema, loginResponseSchema, sessionResponseSchema, userObjectSchema
     - Create `src/api/schemas/map.schema.ts` with mapQueryParamsSchema, requestMarkerSchema, technicianMarkerSchema, heatmapZoneSchema
     - Create `src/api/schemas/requests.schema.ts` with createRequestBodySchema (title 5-200 chars, valid category, description 0-2000 chars, location validation, images max 4), createRequestResponseSchema, clientRequestSchema
@@ -41,7 +41,7 @@ Implement the backend API contracts for the FixIt on-demand technician marketpla
     - Implement response validation using Zod schemas (parse response bodies against expected schemas)
     - _Requirements: 1.2, 1.4, 2.1, 2.2, 2.3, 2.4, 3.3, 6.2, 10.4_
 
-  - [~] 2.2 Create API base configuration and constants
+  - [x] 2.2 Create API base configuration and constants
     - Create `src/api/client/config.ts` with base URL configuration, default headers, timeout settings
     - Define endpoint path constants for all REST endpoints
     - Define WebSocket path constants (`/ws/client`, `/ws/technician`, `/ws/admin`)
