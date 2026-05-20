@@ -156,9 +156,13 @@ export async function getMyRequests(req: Request, res: Response): Promise<void> 
         id: r.id,
         title: r.title,
         category: r.category,
+        description: r.description,
+        images: r.images || [],
         status: displayStatus,
         technician: (r as any).technician ? { name: (r as any).technician.full_name } : null,
         created_at: r.created_at,
+        latitude: r.latitude,
+        longitude: r.longitude,
         price: r.price_estimated ? `$${r.price_estimated}` : null,
         eta_minutes: isActive ? Math.floor(Math.random() * 15) + 5 : undefined, // TODO: real ETA calculation
       };
