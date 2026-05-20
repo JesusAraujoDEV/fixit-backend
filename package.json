@@ -3,12 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
+    "build": "tsc -p tsconfig.build.json",
     "postinstall": "npm run build",
     "typecheck": "tsc --noEmit",
-    "build": "tsc -p tsconfig.build.json",
     "test": "vitest --run",
     "test:watch": "vitest",
     "db:migrate": "npx sequelize-cli db:migrate",
@@ -19,6 +22,11 @@
     "db:status": "npx sequelize-cli db:migrate:status"
   },
   "devDependencies": {
+    "fast-check": "^4.8.0",
+    "tsx": "^4.19.0",
+    "vitest": "^4.1.6"
+  },
+  "dependencies": {
     "@types/bcrypt": "^5.0.2",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
@@ -27,13 +35,6 @@
     "@types/node": "^25.9.0",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.7",
-    "fast-check": "^4.8.0",
-    "sequelize-cli": "^6.6.2",
-    "tsx": "^4.19.0",
-    "typescript": "5.7.3",
-    "vitest": "^4.1.6"
-  },
-  "dependencies": {
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -44,9 +45,11 @@
     "pg": "^8.13.0",
     "pg-hstore": "^2.3.4",
     "sequelize": "^6.37.3",
+    "sequelize-cli": "^6.6.2",
     "socket.io": "^4.8.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
+    "typescript": "5.7.3",
     "zod": "^4.4.3"
   }
 }
