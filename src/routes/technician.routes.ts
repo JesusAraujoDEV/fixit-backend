@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getAvailability, updateAvailability } from "../controllers/technician.controller.js";
+import { getAvailability, updateAvailability, getProfile, updateProfile } from "../controllers/technician.controller.js";
 import { authenticate, requireRole } from "../middleware/auth.middleware.js";
 
 const router = Router();
@@ -10,7 +10,6 @@ const router = Router();
  *   get:
  *     tags: [Technician]
  *     summary: Obtener estado de disponibilidad
- *     description: Retorna si el técnico está online y cuándo se actualizó.
  *     security:
  *       - BearerAuth: []
  *     responses:
@@ -23,10 +22,6 @@ const router = Router();
  *               properties:
  *                 online: { type: boolean }
  *                 updated_at: { type: string, format: date-time }
- *       401:
- *         description: No autenticado
- *       403:
- *         description: No es técnico
  */
 router.get("/availability", authenticate, requireRole("technician"), getAvailability);
 
@@ -36,7 +31,6 @@ router.get("/availability", authenticate, requireRole("technician"), getAvailabi
  *   patch:
  *     tags: [Technician]
  *     summary: Toggle disponibilidad del técnico
- *     description: Cambia el estado online/offline del técnico y actualiza su ubicación.
  *     security:
  *       - BearerAuth: []
  *     requestBody:
@@ -48,27 +42,51 @@ router.get("/availability", authenticate, requireRole("technician"), getAvailabi
  *             required: [online]
  *             properties:
  *               online: { type: boolean }
- *               lat: { type: number, description: "Requerido si online=true" }
- *               lng: { type: number, description: "Requerido si online=true" }
+ *               lat: { type: number }
+ *               lng: { type: number }
  *     responses:
  *       200:
  *         description: Estado actualizado
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 online: { type: boolean }
- *                 updated_at: { type: string, format: date-time }
- *       400:
- *         description: Parámetros inválidos
- *       401:
- *         description: No autenticado
- *       403:
- *         description: No es técnico
- *       404:
- *         description: Perfil no encontrado
  */
 router.patch("/availability", authenticate, requireRole("technician"), updateAvailability);
+
+/**
+ * @openapi
+ * /api/technician/profile:
+ *   get:
+ *     tags: [Technician]
+ *     summary: Obtener perfil profesional
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Perfil completo del técnico
+ */
+router.get("/profile", authenticate, requireRole("technician"), getProfile);
+
+/**
+ * @openapi
+ * /api/technician/profile:
+ *   put:
+ *     tags: [Technician]
+ *     summary: Actualizar perfil profesional
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               bio: { type: string }
+ *               full_name: { type: string }
+ *               phone: { type: string }
+ *               avatar_url: { type: string }
+ *     responses:
+ *       200:
+ *         description: Perfil actualizado
+ */
+router.put("/profile", authenticate, requireRole("technician"), updateProfile);
 
 export default router;

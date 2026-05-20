@@ -12,6 +12,7 @@ import adminRoutes from "./routes/admin.routes.js";
 import aiRoutes from "./routes/ai.routes.js";
 import uploadRoutes from "./routes/upload.routes.js";
 import reviewRoutes from "./routes/review.routes.js";
+import notificationRoutes from "./routes/notification.routes.js";
 
 const app = express();
 
@@ -33,7 +34,8 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/reviews", reviewRoutes);
-app.use("/api/users", reviewRoutes); // mounts /api/users/me/stats
+app.use("/api/users", reviewRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // Health check
 app.get("/health", (_req, res) => {

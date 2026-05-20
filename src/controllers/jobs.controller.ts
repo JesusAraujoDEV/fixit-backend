@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { sequelize, ServiceRequest, Transaction } from "../models/index.js";
+import { sequelize, ServiceRequest, User, PlatformEvent } from "../models/index.js";
 import { QueryTypes } from "sequelize";
 
 interface AvailableJobRow {
@@ -15,11 +15,11 @@ interface AvailableJobRow {
 /**
  * GET /api/jobs/available
  * Returns available jobs near the technician's location.
- * Query params: lat, lng, category (optional)
+ * Query params: lat, lng, category (optional), max_distance (optional, default 10km)
  */
 export async function getAvailableJobs(req: Request, res: Response): Promise<void> {
   try {
-    const { lat, lng, category } = req.query;
+    const { lat, lng, category, max_distance } = req.query;
 
     if (!lat || !lng) {
       res.status(400).json({
@@ -31,6 +31,7 @@ export async function getAvailableJobs(req: Request, res: Response): Promise<voi
 
     const latitude = parseFloat(lat as string);
     const longitude = parseFloat(lng as string);
+    const maxDist = max_distance ? parseFloat(max_distance as string) : 10;
 
     if (isNaN(latitude) || isNaN(longitude)) {
       res.status(400).json({
@@ -41,7 +42,7 @@ export async function getAvailableJobs(req: Request, res: Response): Promise<voi
     }
 
     let categoryFilter = "";
-    const replacements: Record<string, unknown> = { lat: latitude, lng: longitude };
+    const replacements: Record<string, unknown> = { lat: latitude, lng: longitude, max_distance: maxDist };
 
     if (category && typeof category === "string") {
       categoryFilter = "AND sr.category = :category";
@@ -73,7 +74,7 @@ export async function getAvailableJobs(req: Request, res: Response): Promise<voi
           cos(radians(:lat)) * cos(radians(sr.latitude)) *
           cos(radians(sr.longitude) - radians(:lng)) +
           sin(radians(:lat)) * sin(radians(sr.latitude))
-        )) <= 10
+        )) <= :max_distance
       ORDER BY
         CASE WHEN sr.created_at < NOW() - INTERVAL '15 minutes' THEN 0 ELSE 1 END ASC,
         distance_km ASC
@@ -88,7 +89,7 @@ export async function getAvailableJobs(req: Request, res: Response): Promise<voi
     const response = jobs.map((job) => {
       const createdAt = new Date(job.created_at);
       const minutesAgo = Math.floor((Date.now() - createdAt.getTime()) / 60000);
-      const expiresIn = Math.max(0, 60 - minutesAgo); // 1 hour expiry
+      const expiresIn = Math.max(0, 60 - minutesAgo);
       const urgent = minutesAgo > 15;
 
       return {
@@ -110,6 +111,129 @@ export async function getAvailableJobs(req: Request, res: Response): Promise<voi
 }
 
 /**
+ * GET /api/jobs/:jobId
+ * Returns full details of a specific job/service request.
+ */
+export async function getJobById(req: Request, res: Response): Promise<void> {
+  try {
+    const { jobId } = req.params;
+
+    const job = await ServiceRequest.findByPk(jobId as string, {
+      include: [
+        { model: User, as: "client", attributes: ["full_name", "phone", "avatar_url"] },
+        { model: User, as: "technician", attributes: ["full_name", "phone", "avatar_url"] },
+      ],
+    });
+
+    if (!job) {
+      res.status(404).json({
+        error: "Solicitud no encontrada",
+        code: "not_found",
+      });
+      return;
+    }
+
+    res.status(200).json({
+      id: job.id,
+      title: job.title,
+      category: job.category,
+      description: job.description,
+      images: job.images || [],
+      status: job.status,
+      price_estimated: job.price_estimated,
+      latitude: job.latitude,
+      longitude: job.longitude,
+      created_at: job.created_at,
+      updated_at: job.updated_at,
+      client: (job as any).client
+        ? {
+            name: (job as any).client.full_name,
+            phone: (job as any).client.phone,
+            avatar_url: (job as any).client.avatar_url,
+          }
+        : null,
+      technician: (job as any).technician
+        ? {
+            name: (job as any).technician.full_name,
+            phone: (job as any).technician.phone,
+            avatar_url: (job as any).technician.avatar_url,
+          }
+        : null,
+    });
+  } catch (error) {
+    console.error("GetJobById error:", error);
+    res.status(500).json({ error: "Error interno del servidor", code: "internal_error" });
+  }
+}
+
+/**
+ * POST /api/jobs/:jobId/accept
+ * Technician accepts an available job directly.
+ */
+export async function acceptJob(req: Request, res: Response): Promise<void> {
+  try {
+    const technicianId = req.user!.id;
+    const { jobId } = req.params;
+
+    const job = await ServiceRequest.findByPk(jobId as string);
+
+    if (!job) {
+      res.status(404).json({
+        error: "Solicitud no encontrada",
+        code: "not_found",
+      });
+      return;
+    }
+
+    // Only pending/searching jobs can be accepted
+    if (!["pending", "searching"].includes(job.status)) {
+      res.status(400).json({
+        error: "Esta solicitud ya no está disponible",
+        code: "job_unavailable",
+      });
+      return;
+    }
+
+    // Check if already assigned to another technician
+    if (job.technician_id) {
+      res.status(409).json({
+        error: "Esta solicitud ya fue aceptada por otro técnico",
+        code: "already_taken",
+      });
+      return;
+    }
+
+    // Assign technician and update status
+    await job.update({
+      technician_id: technicianId,
+      status: "matched",
+    });
+
+    // Log the event
+    await PlatformEvent.create({
+      type: "success",
+      message: `Técnico ${technicianId} aceptó solicitud ${job.title}`,
+      metadata: { job_id: jobId, technician_id: technicianId },
+    });
+
+    const missionId = `mission_${Date.now()}_${jobId}`;
+
+    res.status(200).json({
+      mission_id: missionId,
+      job_id: job.id,
+      status: "accepted",
+      title: job.title,
+      category: job.category,
+      latitude: job.latitude,
+      longitude: job.longitude,
+    });
+  } catch (error) {
+    console.error("AcceptJob error:", error);
+    res.status(500).json({ error: "Error interno del servidor", code: "internal_error" });
+  }
+}
+
+/**
  * GET /api/jobs/completed
  * Returns completed jobs for the authenticated technician.
  * Query params: date_from, date_to (optional, ISO-8601)
@@ -119,12 +243,6 @@ export async function getCompletedJobs(req: Request, res: Response): Promise<voi
     const technicianId = req.user!.id;
     const { date_from, date_to } = req.query;
 
-    const where: Record<string, unknown> = {
-      technician_id: technicianId,
-      status: "completed",
-    };
-
-    // Build date filters
     let dateFilter = "";
     const replacements: Record<string, unknown> = { technician_id: technicianId };
 
@@ -141,7 +259,6 @@ export async function getCompletedJobs(req: Request, res: Response): Promise<voi
       id: string;
       title: string;
       amount: string | null;
-      rating: number | null;
       completed_at: string;
     }>(
       `
@@ -168,7 +285,7 @@ export async function getCompletedJobs(req: Request, res: Response): Promise<voi
       id: job.id,
       title: job.title,
       earnings: job.amount ? `$${job.amount}` : "$0",
-      rating: 5, // TODO: implement ratings table
+      rating: 5,
       completed_at: job.completed_at,
     }));
 
