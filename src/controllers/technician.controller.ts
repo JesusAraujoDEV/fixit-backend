@@ -35,16 +35,18 @@ export async function updateAvailability(req: Request, res: Response): Promise<v
       return;
     }
 
-    const profile = await TechnicianProfile.findOne({
+    let profile = await TechnicianProfile.findOne({
       where: { user_id: userId },
     });
 
+    // Auto-create profile if it doesn't exist (handles users registered before this feature)
     if (!profile) {
-      res.status(404).json({
-        error: "Perfil de técnico no encontrado",
-        code: "not_found",
+      profile = await TechnicianProfile.create({
+        user_id: userId,
+        is_online: false,
+        is_verified: false,
+        rating_average: 0,
       });
-      return;
     }
 
     // Update profile
