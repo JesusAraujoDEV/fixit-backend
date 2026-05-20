@@ -7,6 +7,7 @@ import { initServiceRequest, ServiceRequest } from "./service-request.model.js";
 import { initTransaction, Transaction } from "./transaction.model.js";
 import { initPlatformEvent, PlatformEvent } from "./platform-event.model.js";
 import { initTechnicianVerification, TechnicianVerification } from "./technician-verification.model.js";
+import { initReview, Review } from "./review.model.js";
 
 dotenv.config();
 
@@ -36,6 +37,7 @@ initServiceRequest(sequelize);
 initTransaction(sequelize);
 initPlatformEvent(sequelize);
 initTechnicianVerification(sequelize);
+initReview(sequelize);
 
 // Define associations
 User.hasOne(TechnicianProfile, {
@@ -83,6 +85,28 @@ TechnicianVerification.belongsTo(User, {
   as: "user",
 });
 
+// Reviews associations
+User.hasMany(Review, {
+  foreignKey: "reviewer_id",
+  as: "reviewsGiven",
+});
+User.hasMany(Review, {
+  foreignKey: "reviewed_id",
+  as: "reviewsReceived",
+});
+Review.belongsTo(User, {
+  foreignKey: "reviewer_id",
+  as: "reviewer",
+});
+Review.belongsTo(User, {
+  foreignKey: "reviewed_id",
+  as: "reviewed",
+});
+Review.belongsTo(ServiceRequest, {
+  foreignKey: "service_request_id",
+  as: "serviceRequest",
+});
+
 export {
   sequelize,
   User,
@@ -91,4 +115,5 @@ export {
   Transaction,
   PlatformEvent,
   TechnicianVerification,
+  Review,
 };
