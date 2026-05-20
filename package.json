@@ -6,8 +6,9 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
+    "postinstall": "npm run build",
     "typecheck": "tsc --noEmit",
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
     "test": "vitest --run",
     "test:watch": "vitest",
     "db:migrate": "npx sequelize-cli db:migrate",
