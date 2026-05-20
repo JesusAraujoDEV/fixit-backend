@@ -2,6 +2,37 @@ import { Request, Response } from "express";
 import { TechnicianProfile } from "../models/index.js";
 
 /**
+ * GET /api/technician/availability
+ * Returns the current online status of the authenticated technician.
+ */
+export async function getAvailability(req: Request, res: Response): Promise<void> {
+  try {
+    const userId = req.user!.id;
+
+    let profile = await TechnicianProfile.findOne({
+      where: { user_id: userId },
+    });
+
+    if (!profile) {
+      profile = await TechnicianProfile.create({
+        user_id: userId,
+        is_online: false,
+        is_verified: false,
+        rating_average: 0,
+      });
+    }
+
+    res.status(200).json({
+      online: profile.is_online,
+      updated_at: profile.updated_at,
+    });
+  } catch (error) {
+    console.error("GetAvailability error:", error);
+    res.status(500).json({ error: "Error interno del servidor", code: "internal_error" });
+  }
+}
+
+/**
  * PATCH /api/technician/availability
  * Toggle technician online/offline status and update location.
  */

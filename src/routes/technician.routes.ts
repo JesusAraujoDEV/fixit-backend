@@ -1,8 +1,34 @@
 import { Router } from "express";
-import { updateAvailability } from "../controllers/technician.controller.js";
+import { getAvailability, updateAvailability } from "../controllers/technician.controller.js";
 import { authenticate, requireRole } from "../middleware/auth.middleware.js";
 
 const router = Router();
+
+/**
+ * @openapi
+ * /api/technician/availability:
+ *   get:
+ *     tags: [Technician]
+ *     summary: Obtener estado de disponibilidad
+ *     description: Retorna si el técnico está online y cuándo se actualizó.
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Estado actual
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 online: { type: boolean }
+ *                 updated_at: { type: string, format: date-time }
+ *       401:
+ *         description: No autenticado
+ *       403:
+ *         description: No es técnico
+ */
+router.get("/availability", authenticate, requireRole("technician"), getAvailability);
 
 /**
  * @openapi
