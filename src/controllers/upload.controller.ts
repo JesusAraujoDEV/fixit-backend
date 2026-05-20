@@ -1,5 +1,4 @@
 import { Request, Response } from "express";
-import FormData from "form-data";
 
 const IMGBB_API_KEY = process.env.IMGBB_API_KEY;
 const IMGBB_API_URL = "https://api.imgbb.com/1/upload";
@@ -71,24 +70,25 @@ export async function uploadImage(req: Request, res: Response): Promise<void> {
     // Convert buffer to base64 for ImgBB API
     const base64Image = file.buffer.toString("base64");
 
-    // Build form data for ImgBB
-    const formData = new FormData();
-    formData.append("key", IMGBB_API_KEY);
-    formData.append("image", base64Image);
+    // Build URL-encoded body for ImgBB API
+    const params = new URLSearchParams();
+    params.append("key", IMGBB_API_KEY);
+    params.append("image", base64Image);
 
     if (req.body.name) {
-      formData.append("name", req.body.name);
+      params.append("name", req.body.name);
     }
 
     // Optional expiration (in seconds)
     if (req.body.expiration) {
-      formData.append("expiration", req.body.expiration);
+      params.append("expiration", req.body.expiration);
     }
 
     // Upload to ImgBB
     const response = await fetch(IMGBB_API_URL, {
       method: "POST",
-      body: formData as any,
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: params.toString(),
     });
 
     const result = (await response.json()) as ImgBBResponse;
@@ -148,17 +148,18 @@ export async function uploadImageFromUrl(req: Request, res: Response): Promise<v
       return;
     }
 
-    // Build form data for ImgBB (passing URL directly)
-    const formData = new FormData();
-    formData.append("key", IMGBB_API_KEY);
-    formData.append("image", image_url);
+    // Build URL-encoded body for ImgBB (passing URL directly)
+    const params = new URLSearchParams();
+    params.append("key", IMGBB_API_KEY);
+    params.append("image", image_url);
 
-    if (name) formData.append("name", name);
-    if (expiration) formData.append("expiration", String(expiration));
+    if (name) params.append("name", name);
+    if (expiration) params.append("expiration", String(expiration));
 
     const response = await fetch(IMGBB_API_URL, {
       method: "POST",
-      body: formData as any,
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: params.toString(),
     });
 
     const result = (await response.json()) as ImgBBResponse;
