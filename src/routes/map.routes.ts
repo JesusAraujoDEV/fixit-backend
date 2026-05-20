@@ -66,7 +66,7 @@ router.get("/technicians", authenticate, getTechnicians);
  *       401:
  *         description: No autenticado
  */
-router.get("/requests", authenticate, requireRole("client"), getRequestMarkers);
+router.get("/requests", authenticate, getRequestMarkers);
 
 /**
  * @openapi

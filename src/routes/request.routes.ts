@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createRequest, getMyRequests } from "../controllers/request.controller.js";
+import { createRequest, getMyRequests, completeRequest, rateRequest, rateClient } from "../controllers/request.controller.js";
 import { authenticate, requireRole } from "../middleware/auth.middleware.js";
 
 const router = Router();
@@ -62,5 +62,97 @@ router.post("/", authenticate, requireRole("client"), createRequest);
  *         description: No autenticado
  */
 router.get("/mine", authenticate, requireRole("client"), getMyRequests);
+
+/**
+ * @openapi
+ * /api/requests/{id}/complete:
+ *   post:
+ *     tags: [Requests]
+ *     summary: Marcar solicitud como completada
+ *     description: El cliente marca un servicio en progreso como completado.
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     responses:
+ *       200:
+ *         description: Solicitud completada
+ *       400:
+ *         description: No está en progreso
+ *       403:
+ *         description: No es el dueño
+ *       404:
+ *         description: No encontrada
+ */
+router.post("/:id/complete", authenticate, requireRole("client"), completeRequest);
+
+/**
+ * @openapi
+ * /api/requests/{id}/rate:
+ *   post:
+ *     tags: [Requests]
+ *     summary: Cliente califica al técnico
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [rating]
+ *             properties:
+ *               rating: { type: integer, minimum: 1, maximum: 5 }
+ *               comment: { type: string }
+ *     responses:
+ *       201:
+ *         description: Reseña creada
+ *       400:
+ *         description: Servicio no completado
+ *       409:
+ *         description: Ya calificado
+ */
+router.post("/:id/rate", authenticate, requireRole("client"), rateRequest);
+
+/**
+ * @openapi
+ * /api/requests/{id}/rate-client:
+ *   post:
+ *     tags: [Requests]
+ *     summary: Técnico califica al cliente
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [rating]
+ *             properties:
+ *               rating: { type: integer, minimum: 1, maximum: 5 }
+ *               comment: { type: string }
+ *     responses:
+ *       201:
+ *         description: Reseña creada
+ *       400:
+ *         description: Servicio no completado
+ *       409:
+ *         description: Ya calificado
+ */
+router.post("/:id/rate-client", authenticate, requireRole("technician"), rateClient);
 
 export default router;

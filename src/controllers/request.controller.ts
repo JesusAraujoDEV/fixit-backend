@@ -174,3 +174,206 @@ export async function getMyRequests(req: Request, res: Response): Promise<void> 
     res.status(500).json({ error: "Error interno del servidor", code: "internal_error" });
   }
 }
+
+import { Review, TechnicianProfile, PlatformEvent } from "../models/index.js";
+
+/**
+ * POST /api/requests/:id/complete
+ * Client marks a service request as completed.
+ */
+export async function completeRequest(req: Request, res: Response): Promise<void> {
+  try {
+    const userId = req.user!.id;
+    const { id } = req.params;
+
+    const request = await ServiceRequest.findByPk(id as string);
+
+    if (!request) {
+      res.status(404).json({ error: "Solicitud no encontrada", code: "not_found" });
+      return;
+    }
+
+    // Only the client who owns the request can complete it
+    if (request.client_id !== userId) {
+      res.status(403).json({ error: "No tienes permisos para completar esta solicitud", code: "forbidden" });
+      return;
+    }
+
+    // Only active requests can be completed
+    if (!["matched", "in_progress"].includes(request.status)) {
+      res.status(400).json({
+        error: "Solo solicitudes en progreso pueden ser completadas",
+        code: "invalid_params",
+      });
+      return;
+    }
+
+    await request.update({ status: "completed" });
+
+    // Log event
+    await PlatformEvent.create({
+      type: "success",
+      message: `Servicio "${request.title}" completado por el cliente`,
+      metadata: { job_id: id, client_id: userId, technician_id: request.technician_id },
+    });
+
+    res.status(200).json({
+      id: request.id,
+      status: "completed",
+      updated_at: request.updated_at,
+    });
+  } catch (error) {
+    console.error("CompleteRequest error:", error);
+    res.status(500).json({ error: "Error interno del servidor", code: "internal_error" });
+  }
+}
+
+/**
+ * POST /api/requests/:id/rate
+ * Client rates the technician after service completion.
+ */
+export async function rateRequest(req: Request, res: Response): Promise<void> {
+  try {
+    const userId = req.user!.id;
+    const { id } = req.params;
+    const { rating, comment } = req.body;
+
+    if (!rating || typeof rating !== "number" || rating < 1 || rating > 5) {
+      res.status(422).json({
+        error: "rating debe ser un número entre 1 y 5",
+        code: "invalid_params",
+      });
+      return;
+    }
+
+    const request = await ServiceRequest.findByPk(id as string);
+
+    if (!request) {
+      res.status(404).json({ error: "Solicitud no encontrada", code: "not_found" });
+      return;
+    }
+
+    if (request.client_id !== userId) {
+      res.status(403).json({ error: "No tienes permisos", code: "forbidden" });
+      return;
+    }
+
+    if (request.status !== "completed") {
+      res.status(400).json({ error: "Solo se pueden calificar servicios completados", code: "invalid_params" });
+      return;
+    }
+
+    if (!request.technician_id) {
+      res.status(400).json({ error: "No hay técnico asignado", code: "invalid_params" });
+      return;
+    }
+
+    // Check if already reviewed
+    const existing = await Review.findOne({
+      where: { service_request_id: id as string, reviewer_id: userId },
+    });
+
+    if (existing) {
+      res.status(409).json({ error: "Ya calificaste esta solicitud", code: "already_reviewed" });
+      return;
+    }
+
+    // Create review (client → technician)
+    const review = await Review.create({
+      service_request_id: id as string,
+      reviewer_id: userId,
+      reviewed_id: request.technician_id,
+      rating: Math.round(rating),
+      comment: comment || null,
+    });
+
+    // Update technician's rating_average
+    const [avgResult] = await sequelize.query<{ avg_rating: string }>(
+      `SELECT ROUND(AVG(rating)::numeric, 2) AS avg_rating FROM fixit.reviews WHERE reviewed_id = :tid`,
+      { replacements: { tid: request.technician_id }, type: QueryTypes.SELECT }
+    );
+
+    if (avgResult) {
+      await TechnicianProfile.update(
+        { rating_average: parseFloat(avgResult.avg_rating) },
+        { where: { user_id: request.technician_id } }
+      );
+    }
+
+    res.status(201).json({
+      id: review.id,
+      rating: review.rating,
+      comment: review.comment,
+      created_at: review.created_at,
+    });
+  } catch (error) {
+    console.error("RateRequest error:", error);
+    res.status(500).json({ error: "Error interno del servidor", code: "internal_error" });
+  }
+}
+
+/**
+ * POST /api/requests/:id/rate-client
+ * Technician rates the client after service completion.
+ */
+export async function rateClient(req: Request, res: Response): Promise<void> {
+  try {
+    const userId = req.user!.id;
+    const { id } = req.params;
+    const { rating, comment } = req.body;
+
+    if (!rating || typeof rating !== "number" || rating < 1 || rating > 5) {
+      res.status(422).json({
+        error: "rating debe ser un número entre 1 y 5",
+        code: "invalid_params",
+      });
+      return;
+    }
+
+    const request = await ServiceRequest.findByPk(id as string);
+
+    if (!request) {
+      res.status(404).json({ error: "Solicitud no encontrada", code: "not_found" });
+      return;
+    }
+
+    if (request.technician_id !== userId) {
+      res.status(403).json({ error: "No tienes permisos", code: "forbidden" });
+      return;
+    }
+
+    if (request.status !== "completed") {
+      res.status(400).json({ error: "Solo se pueden calificar servicios completados", code: "invalid_params" });
+      return;
+    }
+
+    // Check if already reviewed
+    const existing = await Review.findOne({
+      where: { service_request_id: id as string, reviewer_id: userId },
+    });
+
+    if (existing) {
+      res.status(409).json({ error: "Ya calificaste este cliente", code: "already_reviewed" });
+      return;
+    }
+
+    // Create review (technician → client)
+    const review = await Review.create({
+      service_request_id: id as string,
+      reviewer_id: userId,
+      reviewed_id: request.client_id,
+      rating: Math.round(rating),
+      comment: comment || null,
+    });
+
+    res.status(201).json({
+      id: review.id,
+      rating: review.rating,
+      comment: review.comment,
+      created_at: review.created_at,
+    });
+  } catch (error) {
+    console.error("RateClient error:", error);
+    res.status(500).json({ error: "Error interno del servidor", code: "internal_error" });
+  }
+}

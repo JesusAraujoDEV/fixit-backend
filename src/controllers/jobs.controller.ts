@@ -209,11 +209,15 @@ export async function acceptJob(req: Request, res: Response): Promise<void> {
       status: "matched",
     });
 
-    // Log the event
+    // Get technician name for the notification
+    const techUser = await User.findByPk(technicianId, { attributes: ["full_name"] });
+    const techName = techUser?.full_name || "Un técnico";
+
+    // Log the event — notify the CLIENT (owner of the request)
     await PlatformEvent.create({
       type: "success",
-      message: `Técnico ${technicianId} aceptó solicitud ${job.title}`,
-      metadata: { job_id: jobId, technician_id: technicianId },
+      message: `${techName} aceptó tu solicitud "${job.title}"`,
+      metadata: { job_id: jobId, technician_id: technicianId, client_id: job.client_id, user_id: job.client_id },
     });
 
     const missionId = `mission_${Date.now()}_${jobId}`;
